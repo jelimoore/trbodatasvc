@@ -6,7 +6,7 @@ This is a collection of multiple different libraries and programs that interface
 
 Most of the basic data services can be set up as such:
 
-    import ars
+    from TrboDataSvc import ars
     def callback(rid, data):
         print("Got a message from radio id {}".format(rid))
         return True
