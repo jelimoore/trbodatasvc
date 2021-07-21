@@ -1,12 +1,10 @@
-#this is basically all a proto, i have no clue how this protocol works
-
 import socket
 from multiprocessing import Process, Value
 import util
 import logging
 
 class ARS():
-    def __init__(self, port=4005):
+    def __init__(self, port=4013):
         self._ip = "0.0.0.0"
         self._cai = 12
         self._port = port

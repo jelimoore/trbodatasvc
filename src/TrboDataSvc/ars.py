@@ -23,6 +23,7 @@ class ARS():
         self._cai = 12
         self._port = port
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._process = Process(target=self._listenForIncoming)
         self._callback = None
 
     def register_callback(self, callback):
@@ -32,10 +33,13 @@ class ARS():
     def listen(self):
         #start listening on specified UDP port
         self._sock.bind((self._ip, self._port))
-        #create subprocess for listening so we don't tie up the main thread of whoever called us
-        p = Process(target=self._listenForIncoming)
-        p.start()
+        self._process.start()
         #p.join()
+
+    def close(self):
+        logging.info("Closing connection, bye!")
+        self._sock.close()
+        self._process.terminate()
     
     def _listenForIncoming(self):
         while True:
