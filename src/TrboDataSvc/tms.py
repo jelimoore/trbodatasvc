@@ -5,18 +5,28 @@ import logging
 
 class TMS():
     def __init__(self, port=4007):
-        self._cai = 12
         self._ip = "0.0.0.0"
+        self._cai = 12
+        self._gcai = 225
         self._port = port
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._process = Process(target=self._listenForIncoming)
         self._callback = None
+
+    def register_callback(self, callback):
+        """ Allow callback to be registered """
+        self._callback = callback
 
     def listen(self):
         #start listening on specified UDP port
         self._sock.bind((self._ip, self._port))
-        #create subprocess for listening so we don't tie up the main thread of whoever called us
-        p = Process(target=self._listenForIncoming)
-        p.start()
+        self._process.start()
+        #p.join()
+
+    def close(self):
+        logging.info("Closing connection, bye!")
+        self._sock.close()
+        self._process.terminate()
     
     def _listenForIncoming(self):
         while True:
@@ -40,12 +50,13 @@ class TMS():
         if (self._callback(rid, messageText) == True):
             self._sendAck(rid, dataIn)
 
-    def register_callback(self, callback):
-        """ Allow callbacks to be registered """
-        self._callback = callback
-
     def sendMessage(self, rid, message):
         ip = util.id2ip(self._cai, rid)
+        messageBytes = self._generateMessage(message)
+        self._sock.sendto(messageBytes, (ip, self._port))
+
+    def sendGroupMessage(self, gid, message):
+        ip = util.ip2id(self._gcai, gid)
         messageBytes = self._generateMessage(message)
         self._sock.sendto(messageBytes, (ip, self._port))
 
