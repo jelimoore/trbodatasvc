@@ -75,6 +75,6 @@ class ARS():
         self._sock.sendto(ackMessage, (ip, 4005))
 
     def queryRadio(self, rid):
-        ip = util.id2ip(self._cai, rid)
+        ip = util.id2ip(self._cai, int(rid))
         queryMessage = b'\x00\x01\x74'
         self._sock.sendto(queryMessage, (ip, 4005))

@@ -51,12 +51,12 @@ class TMS():
             self._sendAck(rid, dataIn)
 
     def sendMessage(self, rid, message):
-        ip = util.id2ip(self._cai, rid)
+        ip = util.id2ip(self._cai, int(rid))
         messageBytes = self._generateMessage(message)
         self._sock.sendto(messageBytes, (ip, self._port))
 
     def sendGroupMessage(self, gid, message):
-        ip = util.ip2id(self._gcai, gid)
+        ip = util.ip2id(self._gcai, int(gid))
         messageBytes = self._generateMessage(message)
         self._sock.sendto(messageBytes, (ip, self._port))
 
