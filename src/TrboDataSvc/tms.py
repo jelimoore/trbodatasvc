@@ -41,12 +41,13 @@ class TMS():
     def _handleTmsAck(self, dataIn, addrIn):
         #TODO - queue messages and repeat sending them until ACK is received. for now, drop it on the floor
         ip, port = addrIn
-        logging.info("Ack received from {}".format(util.ip2id(ip)))
+        logging.debug("Ack received from {}".format(util.ip2id(ip)))
 
     def _handleMessage(self, dataIn, addrIn):
         ip, port = addrIn
         rid = util.ip2id(ip)
         messageText = self._decodeMessage(dataIn)
+        logging.debug("Got text from {}: {}".format(rid, messageText))
         if (self._callback(rid, messageText) == True):
             self._sendAck(rid, dataIn)
 

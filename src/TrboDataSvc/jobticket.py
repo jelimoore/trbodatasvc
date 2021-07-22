@@ -1,9 +1,9 @@
 import socket
 from multiprocessing import Process, Value
-import util
+import TrboDataSvc.util as util
 import logging
 
-class ARS():
+class JobTicket():
     def __init__(self, port=4013):
         self._ip = "0.0.0.0"
         self._cai = 12
@@ -26,7 +26,9 @@ class ARS():
     def _listenForIncoming(self):
         while True:
             data, addr = self._sock.recvfrom(1024)
-            print(data)
+            ip, port = addr
+            rid = util.ip2id(self._cai, ip)
+            logging.debug("Received job ticket data from radio {}: {}".format(rid, data))
             # Send the ack if the callback returns true
             #if (self._callback(rid, messageType) == True):
             #    self._sendAck(rid)
