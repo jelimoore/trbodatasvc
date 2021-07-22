@@ -48,8 +48,11 @@ class ARS():
             opByte = data[2:3]
             ip, port = addr
             rid = util.ip2id(ip)
+            ack_needed = False                  # do we need to send an ack for the message? let's save air time if we don't need to
             messageType = ArsConsts.ARS_UNDEF   # initialize the messageType var with an undefined value, use as fallback
             if (opByte == ArsOpByte.ARS_BYE):   # bye message
+                #no need for an ack on bye, the radio is going away!
+                ack_needed = False
                 messageType = ArsConsts.ARS_BYE
             if (opByte == ArsOpByte.ARS_HELLO): # hello message
                 # let's check that the ID being hello'ed and the sending radio are the same!
@@ -61,18 +64,21 @@ class ARS():
                 #else:
                 #    messageType = ArsConsts.ARS_ID_MISMATCH
                 messageType = ArsConsts.ARS_HELLO
+                ack_needed = True
             if (opByte == ArsOpByte.ARS_PONG):  # pong message
+                #no ack needed, since this is a response
+                ack_needed = False
                 messageType = ArsConsts.ARS_PONG
 
             logging.debug("Got an ARS message from radio {}: {}".format(rid, messageType))
             # Send the ack if the callback returns true
-            if (self._callback(rid, messageType) == True):
+            if (self._callback(rid, messageType) == True and ack_needed == True):
                 self._sendAck(rid)
 
     def _sendAck(self, rid):
         ackMessage = b'\x00\x02\xbf\x01'
         ip = util.id2ip(self._cai, rid)
-        logging.debug("Sending TMS Ack to {}".format(rid))
+        logging.debug("Sending ARS Ack to {}".format(rid))
         self._sock.sendto(ackMessage, (ip, 4005))
 
     def queryRadio(self, rid):
