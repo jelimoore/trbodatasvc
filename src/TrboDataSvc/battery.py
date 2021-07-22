@@ -2,7 +2,7 @@
 #this is mostly a proto with a bit of parsing
 import socket
 from multiprocessing import Process, Value
-import util
+import TrboDataSvc.util as util
 import logging
 class BatteryMgmtOpCodes():
     RADIO_HELLO = b'\x02'
