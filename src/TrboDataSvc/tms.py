@@ -1,6 +1,6 @@
 import socket
 from multiprocessing import Process, Value
-import util
+import TrboDataSvc.util as util
 import logging
 
 class TMS():
@@ -101,4 +101,5 @@ class TMS():
         ackSeqId = intSeqId - 128
         ackSeqId = ackSeqId.to_bytes(1, "big")
         ackMessage = b'\x00\x03' + ackOpByte + b'\x00' + ackSeqId
+        logging.debug("Sending TMS Ack to {}".format(rid))
         self._sock.sendto(ackMessage, (ip, self._port))

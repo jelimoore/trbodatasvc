@@ -1,6 +1,6 @@
 import socket
 from multiprocessing import Process, Value
-import util
+import TrboDataSvc.util as util
 import logging
 
 class ArsConsts():
@@ -72,6 +72,7 @@ class ARS():
     def _sendAck(self, rid):
         ackMessage = b'\x00\x02\xbf\x01'
         ip = util.id2ip(self._cai, rid)
+        logging.debug("Sending TMS Ack to {}".format(rid))
         self._sock.sendto(ackMessage, (ip, 4005))
 
     def queryRadio(self, rid):
