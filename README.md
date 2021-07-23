@@ -6,10 +6,10 @@ Currently supported:
 
 - ARS
 - TMS
+- LRRP (50%)
 
 In the works:
 
-- LRRP
 - Job Tickets
 - Impres OTA Battery Management (low priority, weird format)
 
