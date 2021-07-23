@@ -3,8 +3,9 @@ from multiprocessing import Process, Value
 import TrboDataSvc.util as util
 import logging
 
-class LrrpConsts():
-    LRRP_UNDEF = 0
+class LrrpBytes():
+    LRRP_ACK = b'\x38'
+    LRRP_SIMPLE_POINT = b'\x66'
 
 '''
 byte 0: const?
@@ -35,10 +36,11 @@ period:
 5m point+time: 09 06 23 01 52 34 31 82 2c   12c
 '''
 class LRRP():
-    LRRP_SP_TIME = 1
-    LRRP_SP_ACCURACY = 2
-    LRRP_SP_ACCURACY_SPEED = 3
-    LRRP_SP_ACCURACY_SPEED_DIRECTION = 4
+    LRRP_SP = 1
+    LRRP_SP_TIME = 2
+    LRRP_SP_ACCURACY = 3
+    LRRP_SP_ACCURACY_SPEED = 4
+    LRRP_SP_ACCURACY_SPEED_DIRECTION = 5
     LRRP_3DP = 10
     LRRP_3DP_ACCURACY_SPEED = 11
     LRRP_ACCURACY_TIME_SPEED = 12
@@ -70,8 +72,45 @@ class LRRP():
         while True:
             data, addr = self._sock.recvfrom(1024)
             ip, port = addr
-            rid = util.ip2id(self._cai, ip)
-            logging.debug("Got an LRRP message from radio {}: {}".format(rid, data))
+            rid = util.ip2id(ip)
+            opByte = data[2:3]
+            if (opByte == LrrpBytes.LRRP_ACK):
+                #nothing to do, this is acking our request
+                logging.debug("Got an LRRP ack from {}".format(rid))
+            elif (opByte == LrrpBytes.LRRP_SIMPLE_POINT):
+                simpleBytes = data[3:11]
+                lat, lon = self._decodeSimplePoint(simpleBytes)
+                logging.debug("Got an LRRP simple point from radio {}: {} {}".format(rid, lat, lon))
+                geoDict = {}
+                geoDict['type'] = LRRP.LRRP_SP
+                geoDict['lat'] = lat
+                geoDict['lon'] = lon
+                self._callback(rid, geoDict)
+            else:
+                logging.warning("Got unknown LRRP opbyte from {}: ".format(rid, opByte))
+
+    def _decodeSimplePoint(self, bytesIn):
+        latBytes = bytesIn[:4]
+        lonBytes = bytesIn[4:]
+        lat = self._decodeLat(latBytes)
+        lon = self._decodeLon(lonBytes)
+        return lat, lon
+
+    def _decodeLat(self, data):
+        num = int.from_bytes(data, "big")
+        # wrap number if two's complement
+        if (num > 2147483647):
+            num = ~num ^ 0xFFFFFFFF
+        lat = num * (180.0 / 0xFFFFFFFF)
+        return round(lat, 6)
+
+    def _decodeLon(self, data):
+        num = int.from_bytes(data, "big")
+        # wrap number if two's complement
+        if (num > 2147483647):
+            num = ~num ^ 0xFFFFFFFF
+        lon = num * (360.0 / 0xFFFFFFFF)
+        return round(lon, 6)
 
     def sendImmediateRequest(self, rid):
         request = b'\x09\x01\x33'
