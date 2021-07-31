@@ -2,10 +2,12 @@ import socket
 from multiprocessing import Process, Value
 import TrboDataSvc.util as util
 import logging
+import binascii
 
 class LrrpBytes():
     LRRP_ACK = b'\x38'
     LRRP_SIMPLE_POINT = b'\x66'
+    LRRP_NO_GPS = b'\x37'
 
 '''
 byte 0: const?
@@ -44,6 +46,9 @@ class LRRP():
     LRRP_3DP = 10
     LRRP_3DP_ACCURACY_SPEED = 11
     LRRP_ACCURACY_TIME_SPEED = 12
+    #error consts
+    LRRP_ERROR = 99
+    LRRP_NO_GPS = -1
 
     def __init__(self, port=4001):
         self._ip = "0.0.0.0"
@@ -86,8 +91,17 @@ class LRRP():
                 geoDict['lat'] = lat
                 geoDict['lon'] = lon
                 self._callback(rid, geoDict)
+            elif (opByte == LrrpBytes.LRRP_NO_GPS):
+                logging.warning("Radio {} reported no GPS signal".format(rid))
+                geoDict = {}
+                geoDict['type'] = LRRP.LRRP_ERROR
+                geoDict['error'] = LRRP.LRRP_NO_GPS
+                geoDict['lat'] = -99
+                geoDict['lon'] = -99
+                self._callback(rid, geoDict)
             else:
-                logging.warning("Got unknown LRRP opbyte from {}: ".format(rid, opByte))
+                logging.warning("Got unknown LRRP opbyte from {}: {}".format(rid, opByte))
+                logging.debug("Message: {}".format(binascii.hexlify(data)))
 
     def _decodeSimplePoint(self, bytesIn):
         latBytes = bytesIn[:4]
@@ -135,7 +149,7 @@ class LRRP():
         else:
             intervalBytes = multiplierBytes + secondBytes
         
-        requestBody = b'\x23\x01\x52\x34\x31' + intervalBytes
+        requestBody = b'\x34\x31' + intervalBytes
         #get the length of the request and send it
         length = len(requestBody)
         length = length.to_bytes(1, "big")
@@ -148,8 +162,8 @@ class LRRP():
         ip = util.id2ip(self._cai, rid)
         self._sock.sendto(request, (ip, self._port))
 
-    def sendStopRequests(self, rid):
-        request = b'\x0f\x02\x23\x01'
+    def sendStopRequest(self, rid):
+        request = b'\x0f\x00'
         ip = util.id2ip(self._cai, rid)
         self._sock.sendto(request, (ip, self._port))
 
